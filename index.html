@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">📖</span>
+        <span class="brand-name">Reading Tracker</span>
+      </div>
+      <div class="topbar-actions">
+        <button id="btn-open-goal" class="btn btn-ghost">+ New Goal</button>
+        <button id="btn-open-add-book" class="btn btn-primary">+ Add Book</button>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="library">Library</button>
+      <button class="tab-btn" data-tab="insights">Insights</button>
+      <button class="tab-btn" data-tab="discover">Discover</button>
+    </nav>
+  </header>
+
+  <main class="page">
+
+    <!-- ===== LIBRARY TAB ===== -->
+    <div class="tab-panel" id="tab-library">
+      <section class="section" id="goals-section">
+        <h2 class="section-title">Your Goals</h2>
+        <div id="goals-list" class="goals-list"></div>
+      </section>
+
+      <section class="stats-strip" id="stats-strip"></section>
+
+      <section class="section">
+        <div class="library-controls">
+          <input type="text" id="library-search" class="text-input" placeholder="Search your library by title or author…" />
+          <select id="library-sort" class="text-input">
+            <option value="added_desc">Sort: Recently added</option>
+            <option value="title_asc">Sort: Title (A–Z)</option>
+            <option value="author_asc">Sort: Author (A–Z)</option>
+            <option value="rating_desc">Sort: Rating (high–low)</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Currently Reading</h2>
+        <div id="reading-grid" class="book-grid"></div>
+        <p id="reading-empty" class="empty-state" hidden>Nothing in progress yet. Add a book to get started.</p>
+      </section>
+
+      <section class="section">
+        <div class="shelf">
+          <button class="shelf-toggle" data-shelf="to_read">
+            <span class="chevron">▸</span> To Read <span class="shelf-count" id="count-to_read">0</span>
+          </button>
+          <div class="shelf-body" id="shelf-to_read" hidden></div>
+        </div>
+        <div class="shelf">
+          <button class="shelf-toggle" data-shelf="finished">
+            <span class="chevron">▸</span> Finished <span class="shelf-count" id="count-finished">0</span>
+          </button>
+          <div class="shelf-body" id="shelf-finished" hidden></div>
+        </div>
+        <div class="shelf">
+          <button class="shelf-toggle" data-shelf="dnf">
+            <span class="chevron">▸</span> Did Not Finish <span class="shelf-count" id="count-dnf">0</span>
+          </button>
+          <div class="shelf-body" id="shelf-dnf" hidden></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== INSIGHTS TAB ===== -->
+    <div class="tab-panel" id="tab-insights" hidden>
+      <section class="section">
+        <div class="wrapped-card">
+          <div class="wrapped-header">
+            <h2 class="section-title" style="margin:0;">📅 Monthly Review</h2>
+            <input type="month" id="review-month" class="text-input" style="max-width:170px;" />
+          </div>
+          <div id="review-stats" class="wrapped-stats"></div>
+          <p class="empty-state" id="review-empty" hidden>Nothing logged in this month yet.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Reading Calendar</h2>
+        <p class="section-sub">Every day you logged a session, over the last year.</p>
+        <div class="chart-card">
+          <div id="calendar-heatmap" class="heatmap-scroll"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="insights-header-row">
+          <div>
+            <h2 class="section-title" style="margin-bottom:2px;">Reading Speed</h2>
+            <p class="section-sub" id="pace-chart-sub" style="margin:0;">Pages per hour on each day you logged a session.</p>
+          </div>
+          <div class="range-toggle">
+            <button class="mode-btn active" data-chart-range="14d">14 Days</button>
+            <button class="mode-btn" data-chart-range="90d">90 Days</button>
+            <button class="mode-btn" data-chart-range="all">All Time</button>
+          </div>
+        </div>
+        <div class="chart-card">
+          <canvas id="pace-chart" height="220"></canvas>
+          <p class="empty-state" id="pace-chart-empty" hidden>Log a few sessions to see your trend here.</p>
+        </div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">Estimated Time to Finish</h2>
+        <p class="section-sub">Based on your reading speed over the last 14 days (or your all-time average if you're just getting started).</p>
+        <div id="estimates-list" class="estimates-list"></div>
+        <p class="empty-state" id="estimates-empty" hidden>Nothing currently in progress.</p>
+      </section>
+    </div>
+
+    <!-- ===== DISCOVER TAB ===== -->
+    <div class="tab-panel" id="tab-discover" hidden>
+      <section class="section">
+        <h2 class="section-title">Not sure what to read next?</h2>
+        <p class="section-sub">Pick a genre and the mood you're in, and we'll pull a few suggestions from Open Library.</p>
+        <div class="discover-controls">
+          <div>
+            <label class="field-label">Genre</label>
+            <select id="discover-genre" class="text-input"></select>
+          </div>
+          <div>
+            <label class="field-label">Mood</label>
+            <select id="discover-mood" class="text-input"></select>
+          </div>
+          <button id="btn-discover" class="btn btn-primary">Get Recommendations</button>
+        </div>
+        <div id="discover-status" class="search-status"></div>
+        <div id="discover-results" class="book-grid" style="margin-top:16px;"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Because You Loved…</h2>
+        <p class="section-sub">More books from the authors behind your 4–5★ rated reads.</p>
+        <button id="btn-loved" class="btn btn-ghost">Find more like your favorites</button>
+        <div id="loved-status" class="search-status"></div>
+        <div id="loved-results" class="book-grid" style="margin-top:16px;"></div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ===== Add Book Modal ===== -->
+  <div class="modal-overlay" id="modal-add-book" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add a Book</h3>
+        <button class="modal-close" data-close="modal-add-book">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Search by</label>
+        <select id="search-mode" class="text-input">
+          <option value="title">Title / Keyword</option>
+          <option value="author">Author</option>
+          <option value="genre">Genre / Subject</option>
+        </select>
+        <input type="text" id="book-search-input" class="text-input" placeholder="e.g. Project Hail Mary" autocomplete="off" style="margin-top:8px;" />
+        <div id="search-status" class="search-status"></div>
+        <div id="search-results" class="search-results"></div>
+
+        <div class="divider"><span>or add by ISBN</span></div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="isbn-input" class="text-input" placeholder="e.g. 9780593135204" />
+          <button type="button" id="btn-isbn-lookup" class="btn btn-ghost">Look up</button>
+        </div>
+        <button type="button" id="btn-scan-barcode" class="btn btn-ghost btn-block" style="margin-top:8px;">📷 Scan Barcode</button>
+        <div id="isbn-status" class="search-status"></div>
+
+        <div class="divider"><span>or enter manually</span></div>
+
+        <form id="manual-book-form" class="form-grid">
+          <div class="form-row">
+            <label class="field-label">Title *</label>
+            <input type="text" id="manual-title" class="text-input" required />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Author</label>
+            <input type="text" id="manual-author" class="text-input" />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Total pages</label>
+            <input type="number" id="manual-pages" class="text-input" min="1" placeholder="e.g. 320" />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Shelf</label>
+            <select id="manual-status" class="text-input">
+              <option value="reading">Currently Reading</option>
+              <option value="to_read">Want to Read</option>
+              <option value="finished">Already Read</option>
+            </select>
+          </div>
+          <div class="form-row" id="manual-finished-extra" hidden>
+            <label class="field-label">Your rating</label>
+            <div id="manual-rating-stars"></div>
+            <label class="field-label" style="margin-top:10px;">Quick review (optional)</label>
+            <textarea id="manual-review" class="text-input" rows="3"></textarea>
+          </div>
+          <input type="hidden" id="manual-cover" />
+          <input type="hidden" id="manual-isbn" />
+          <button type="submit" class="btn btn-primary btn-block">Add Book</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Barcode Scanner Modal ===== -->
+  <div class="modal-overlay" id="modal-scanner" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Scan a Barcode</h3>
+        <button class="modal-close" data-close="modal-scanner">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="section-sub">Point your camera at the barcode on the back of the book.</p>
+        <div id="scanner-region"></div>
+        <div id="scanner-status" class="search-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Log Session Modal ===== -->
+  <div class="modal-overlay" id="modal-log-session" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Log a Reading Session</h3>
+        <button class="modal-close" data-close="modal-log-session">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="log-session-form" class="form-grid">
+          <div class="form-row">
+            <label class="field-label">Book *</label>
+            <select id="session-book" class="text-input" required></select>
+          </div>
+          <div class="form-row">
+            <label class="field-label">Date</label>
+            <input type="date" id="session-date" class="text-input" required />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Pages read *</label>
+            <input type="number" id="session-pages" class="text-input" min="1" required />
+          </div>
+
+          <div class="form-row">
+            <div class="minutes-mode-toggle">
+              <button type="button" class="mode-btn active" data-minutes-mode="timer">⏱ Timer</button>
+              <button type="button" class="mode-btn" data-minutes-mode="manual">✏️ Enter manually</button>
+            </div>
+
+            <div id="minutes-timer-mode" class="timer-block">
+              <div class="timer-display" id="timer-display">00:00</div>
+              <div class="timer-controls">
+                <button type="button" id="timer-start" class="btn btn-ghost btn-small">▶ Start</button>
+                <button type="button" id="timer-pause" class="btn btn-ghost btn-small" hidden>⏸ Pause</button>
+                <button type="button" id="timer-resume" class="btn btn-ghost btn-small" hidden>▶ Resume</button>
+                <button type="button" id="timer-reset" class="btn btn-ghost btn-small">↺ Reset</button>
+              </div>
+            </div>
+
+            <div id="minutes-manual-mode" hidden>
+              <label class="field-label">Minutes spent *</label>
+              <input type="number" id="session-minutes-manual" class="text-input" min="1" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="field-label">Reflection (optional)</label>
+            <textarea id="session-note" class="text-input" rows="2" placeholder="Thoughts on what you just read..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Save Session</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Finish Book Modal ===== -->
+  <div class="modal-overlay" id="modal-finish-book" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Mark as Finished</h3>
+        <button class="modal-close" data-close="modal-finish-book">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="finish-book-form" class="form-grid">
+          <input type="hidden" id="finish-book-id" />
+          <div class="form-row">
+            <label class="field-label">Date finished</label>
+            <input type="date" id="finish-date" class="text-input" required />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Your rating</label>
+            <div id="finish-rating-stars"></div>
+          </div>
+          <div class="form-row">
+            <label class="field-label">Review (optional)</label>
+            <textarea id="finish-review" class="text-input" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Save &amp; Mark Finished</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Book Detail Modal ===== -->
+  <div class="modal-overlay" id="modal-book-detail" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="detail-title">Book</h3>
+        <button class="modal-close" data-close="modal-book-detail">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-top">
+          <div id="detail-cover"></div>
+          <div>
+            <div id="detail-author" class="book-author"></div>
+            <div id="detail-status" class="goal-sub"></div>
+            <button type="button" id="btn-more-by-author" class="btn-small" style="margin-top:6px;">More by this author</button>
+          </div>
+        </div>
+        <div id="detail-author-more" class="search-results" style="margin-top:8px;"></div>
+
+        <div id="detail-actions-row" class="form-row" hidden>
+          <button type="button" id="btn-read-again" class="btn btn-ghost btn-block">🔁 Read Again</button>
+        </div>
+
+        <div id="detail-past-reads" hidden>
+          <div class="divider"><span>past reads</span></div>
+          <div id="detail-past-reads-list" class="detail-sessions"></div>
+        </div>
+
+        <div class="form-row" style="margin-top:14px;">
+          <label class="field-label">Your rating</label>
+          <div id="detail-rating-stars"></div>
+        </div>
+        <div class="form-row">
+          <label class="field-label">Review</label>
+          <textarea id="detail-review" class="text-input" rows="3"></textarea>
+          <button type="button" id="btn-save-review" class="btn btn-ghost" style="margin-top:6px;">Save Rating &amp; Review</button>
+        </div>
+
+        <div class="divider"><span>session history</span></div>
+        <div id="detail-sessions" class="detail-sessions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Did Not Finish Modal ===== -->
+  <div class="modal-overlay" id="modal-dnf" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Mark as Did Not Finish</h3>
+        <button class="modal-close" data-close="modal-dnf">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="dnf-form" class="form-grid">
+          <input type="hidden" id="dnf-book-id" />
+          <div class="form-row">
+            <label class="field-label">Date</label>
+            <input type="date" id="dnf-date" class="text-input" required />
+          </div>
+          <div class="form-row">
+            <label class="field-label">Why did you stop? (optional)</label>
+            <textarea id="dnf-reason" class="text-input" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Move to Did Not Finish</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== New Goal Modal ===== -->
+  <div class="modal-overlay" id="modal-goal" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>New Reading Goal</h3>
+        <button class="modal-close" data-close="modal-goal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="goal-form" class="form-grid">
+          <div class="form-row">
+            <label class="field-label">Goal type</label>
+            <select id="goal-type" class="text-input">
+              <option value="book_count">Finish N books</option>
+              <option value="page_count">Read N total pages</option>
+              <option value="minute_count">Spend N total minutes reading</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="field-label" id="goal-target-label">Target (books)</label>
+            <input type="number" id="goal-target" class="text-input" min="1" required />
+          </div>
+          <div class="form-row two-col">
+            <div>
+              <label class="field-label">Start date</label>
+              <input type="date" id="goal-start" class="text-input" required />
+            </div>
+            <div>
+              <label class="field-label">Duration</label>
+              <select id="goal-duration" class="text-input">
+                <option value="day">Daily (1 day)</option>
+                <option value="week">Weekly (7 days)</option>
+                <option value="month" selected>Monthly (1 month)</option>
+                <option value="quarter">Several months (3 months)</option>
+                <option value="half_year">Several months (6 months)</option>
+                <option value="year">Yearly (1 year)</option>
+                <option value="custom">Custom end date…</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" id="goal-custom-end-row" hidden>
+            <label class="field-label">End date</label>
+            <input type="date" id="goal-end" class="text-input" />
+          </div>
+          <p class="section-sub" id="goal-end-preview" style="margin:-4px 0 0;"></p>
+          <div class="form-row" id="goal-repeat-row">
+            <label class="checkbox-row">
+              <input type="checkbox" id="goal-repeat" />
+              <span>Repeat automatically each period (rolls to the next one on its own — no need to recreate it)</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Goal</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
